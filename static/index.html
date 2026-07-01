@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contador de Valores</title>
+<style>
+  :root {
+    --bg: #fff5f8;
+    --panel: #ffffff;
+    --border: #f6d9e6;
+    --text: #4a3b42;
+    --muted: #a98a97;
+    --accent: #fd8dc7;
+    --accent-dim: #ffe4f0;
+    --accent-deep: #d6568f;
+    --error: #e0577a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top, #fff0f6 0%, var(--bg) 55%, #ffe9f2 100%);
+    color: var(--text);
+    font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 36px;
+    box-shadow: 0 16px 40px rgba(214, 86, 143, 0.15);
+  }
+
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    margin: 0 0 6px;
+    letter-spacing: 0.2px;
+    color: var(--accent-deep);
+  }
+
+  h1::before {
+    content: "✿ ";
+  }
+
+  p.subtitle {
+    margin: 0 0 26px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .row {
+    display: flex;
+    gap: 10px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: #fffafc;
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(253, 141, 199, 0.18);
+  }
+
+  button {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(214, 86, 143, 0.35);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  button:hover { opacity: 0.92; transform: translateY(-1px); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .resultado {
+    margin-top: 24px;
+    padding: 18px;
+    border-radius: 14px;
+    background: var(--accent-dim);
+    border: 1px solid var(--border);
+    min-height: 26px;
+    font-size: 0.95rem;
+    display: none;
+  }
+
+  .resultado.visivel { display: block; }
+
+  .resultado .numero {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: Georgia, "Times New Roman", serif;
+    color: var(--accent-deep);
+  }
+
+  .erro {
+    margin-top: 14px;
+    color: var(--error);
+    font-size: 0.85rem;
+    display: none;
+  }
+
+  .erro.visivel { display: block; }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Contador de valores</h1>
+    <p class="subtitle">Envie um valor e veja quantas vezes ele já apareceu por aqui.</p>
+
+    <label for="valor">Valor</label>
+    <div class="row">
+      <input type="text" id="valor" placeholder="Ex: 42" autocomplete="off">
+      <button id="enviar">Enviar</button>
+    </div>
+
+    <div class="erro" id="erro"></div>
+
+    <div class="resultado" id="resultado">
+      O valor <strong id="valorMostrado"></strong> já foi recebido
+      <span class="numero" id="quantidade"></span> vez(es).
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('valor');
+    const botao = document.getElementById('enviar');
+    const resultado = document.getElementById('resultado');
+    const erroEl = document.getElementById('erro');
+    const valorMostrado = document.getElementById('valorMostrado');
+    const quantidade = document.getElementById('quantidade');
+
+    async function enviarValor() {
+      const valor = input.value.trim();
+
+      erroEl.classList.remove('visivel');
+      resultado.classList.remove('visivel');
+
+      if (!valor) {
+        erroEl.textContent = 'Digite um valor antes de enviar.';
+        erroEl.classList.add('visivel');
+        return;
+      }
+
+      botao.disabled = true;
+      botao.textContent = 'Enviando...';
+
+      try {
+        const resposta = await fetch('/api/contar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ valor })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          throw new Error(dados.erro || 'Erro ao processar a requisição.');
+        }
+
+        valorMostrado.textContent = dados.valor;
+        quantidade.textContent = dados.quantidade;
+        resultado.classList.add('visivel');
+
+      } catch (e) {
+        erroEl.textContent = e.message || 'Não foi possível conectar ao servidor.';
+        erroEl.classList.add('visivel');
+      } finally {
+        botao.disabled = false;
+        botao.textContent = 'Enviar';
+      }
+    }
+
+    botao.addEventListener('click', enviarValor);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') enviarValor();
+    });
+  </script>
+
+</body>
+</html>
