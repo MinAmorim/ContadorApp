@@ -1,10 +1,32 @@
+import json
+import os
 
 from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
-# Estrutura de dados em memória: { "valor_recebido": quantidade_de_vezes }
-contagem_valores = {}
+# Arquivo onde a contagem é persistida em disco
+ARQUIVO_CONTAGENS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "contagens.json")
+
+
+def carregar_contagens():
+    """Lê o arquivo JSON de contagens do disco, se ele existir."""
+    if os.path.exists(ARQUIVO_CONTAGENS):
+        try:
+            with open(ARQUIVO_CONTAGENS, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
+
+
+def salvar_contagens():
+    """Grava o estado atual das contagens no disco."""
+    with open(ARQUIVO_CONTAGENS, "w", encoding="utf-8") as f:
+        json.dump(contagem_valores, f, ensure_ascii=False, indent=2)
+
+
+contagem_valores = carregar_contagens()
 
 
 @app.route("/")
@@ -29,8 +51,9 @@ def contar_valor():
     if valor == "":
         return jsonify({"erro": "O valor não pode ser vazio."}), 400
 
-    # kncrementa a contagem para esse valor específico
+    # Incrementa a contagem para esse valor específico
     contagem_valores[valor] = contagem_valores.get(valor, 0) + 1
+    salvar_contagens()
 
     return jsonify({
         "valor": valor,
@@ -44,5 +67,5 @@ def listar_contagens():
     return jsonify(contagem_valores)
 
 
-if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
