@@ -35,7 +35,7 @@ contador-app/
 
 4. Abra o navegador em:
    ```
-   http://localhost:5001
+   http://localhost:5000
    ```
 
 ## Como funciona
@@ -48,7 +48,7 @@ contador-app/
   (`contagem_valores`), no formato `{ "valor": quantidade }`, que é
   **persistido em disco** no arquivo `contagens.json` a cada atualização.
   Ao iniciar, o servidor carrega esse arquivo (se existir) e continua a
-  contagem de onde parou — ou seja, os dados **não** são zerados ao
+  contagem de onde parou, ou seja, os dados **não** são zerados ao
   reiniciar o servidor.
 
 - O frontend recebe a resposta e exibe na tela "o valor X já foi recebido
